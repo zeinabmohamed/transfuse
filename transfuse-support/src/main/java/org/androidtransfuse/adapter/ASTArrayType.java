@@ -144,6 +144,11 @@ public class ASTArrayType implements ASTType {
     }
 
     @Override
+    public ImmutableSet<ASTType> getInnerTypes() {
+        return ImmutableSet.of();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

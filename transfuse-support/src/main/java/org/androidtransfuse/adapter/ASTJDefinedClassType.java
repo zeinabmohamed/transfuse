@@ -110,6 +110,11 @@ public class ASTJDefinedClassType implements ASTType{
     }
 
     @Override
+    public ImmutableSet<ASTType> getInnerTypes() {
+        return ImmutableSet.of();
+    }
+
+    @Override
     public boolean inherits(ASTType type) {
         return false;
     }
