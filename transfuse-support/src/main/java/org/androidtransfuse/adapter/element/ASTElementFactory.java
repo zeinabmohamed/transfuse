@@ -115,41 +115,49 @@ public class ASTElementFactory {
         }
 
         ASTTypeVirtualProxy astTypeProxy = new ASTTypeVirtualProxy(packageClass);
-        typeCache.put(typeElement, astTypeProxy);
+        try {
+            typeCache.put(typeElement, astTypeProxy);
 
-        ASTType superClass = null;
-        if (typeElement.getSuperclass() != null) {
-            superClass = typeElement.getSuperclass().accept(astTypeBuilderVisitor, null);
+            ASTType superClass = null;
+            if (typeElement.getSuperclass() != null) {
+                superClass = typeElement.getSuperclass().accept(astTypeBuilderVisitor, null);
+            }
+
+            ImmutableSet<ASTType> interfaces = FluentIterable.from(typeElement.getInterfaces())
+                    .transform(astTypeBuilderVisitor)
+                    .toSet();
+
+            ImmutableSet.Builder<ASTAnnotation> annotations = ImmutableSet.builder();
+            ImmutableSet.Builder<ASTConstructor> constructors = ImmutableSet.builder();
+            ImmutableSet.Builder<ASTField> fields = ImmutableSet.builder();
+            ImmutableSet.Builder<ASTMethod> methods = ImmutableSet.builder();
+
+            //iterate and build the contained elements within this TypeElement
+            annotations.addAll(getAnnotations(typeElement));
+            constructors.addAll(transformAST(typeElement.getEnclosedElements(), ASTConstructor.class));
+            fields.addAll(transformAST(typeElement.getEnclosedElements(), ASTField.class));
+            methods.addAll(transformAST(typeElement.getEnclosedElements(), ASTMethod.class));
+
+            ASTType astType = new ASTElementType(buildAccessModifier(typeElement),
+                    packageClass,
+                    typeElement,
+                    constructors.build(),
+                    methods.build(),
+                    fields.build(),
+                    superClass,
+                    interfaces,
+                    annotations.build());
+
+            astTypeProxy.load(astType);
+            typeCache.put(typeElement, astType);
+        }
+        finally {
+            if(!astTypeProxy.isLoaded()) {
+                typeCache.remove(typeElement);
+            }
         }
 
-        ImmutableSet<ASTType> interfaces = FluentIterable.from(typeElement.getInterfaces())
-                .transform(astTypeBuilderVisitor)
-                .toSet();
-
-        ImmutableSet.Builder<ASTAnnotation> annotations = ImmutableSet.builder();
-        ImmutableSet.Builder<ASTConstructor> constructors = ImmutableSet.builder();
-        ImmutableSet.Builder<ASTField> fields = ImmutableSet.builder();
-        ImmutableSet.Builder<ASTMethod> methods = ImmutableSet.builder();
-
-        //iterate and build the contained elements within this TypeElement
-        annotations.addAll(getAnnotations(typeElement));
-        constructors.addAll(transformAST(typeElement.getEnclosedElements(), ASTConstructor.class));
-        fields.addAll(transformAST(typeElement.getEnclosedElements(), ASTField.class));
-        methods.addAll(transformAST(typeElement.getEnclosedElements(), ASTMethod.class));
-
-        ASTType astType = new ASTElementType(buildAccessModifier(typeElement),
-                packageClass,
-                typeElement,
-                constructors.build(),
-                methods.build(),
-                fields.build(),
-                superClass,
-                interfaces,
-                annotations.build());
-
-        astTypeProxy.load(astType);
-
-        return astType;
+        return typeCache.get(typeElement);
     }
 
     private PackageClass buildPackageClass(TypeElement typeElement) {
