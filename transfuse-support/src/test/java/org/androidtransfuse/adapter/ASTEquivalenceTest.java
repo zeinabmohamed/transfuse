@@ -32,6 +32,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
@@ -69,6 +70,7 @@ public class ASTEquivalenceTest {
         public synchronized void init(ProcessingEnvironment processingEnv) {
             super.init(processingEnv);
 
+            Elements elements = processingEnv.getElementUtils();
             messager = processingEnv.getMessager();
             Provider<ASTElementFactory> elementFactoryProvider = new Provider<ASTElementFactory>() {
                 @Override
@@ -77,7 +79,7 @@ public class ASTEquivalenceTest {
                 }
             };
 
-            astTypeBuilderVisitor = new ASTTypeBuilderVisitor(elementFactoryProvider);
+            astTypeBuilderVisitor = new ASTTypeBuilderVisitor(elementFactoryProvider, elements);
 
             ConcreteASTFactory concreteASTFactory = new ConcreteASTFactory();
 
@@ -89,6 +91,7 @@ public class ASTEquivalenceTest {
 
             concreteASTFactory.setAstElementFactoryProvider(elementFactoryProvider);
             concreteASTFactory.setElementConverterFactory(elementConverterFactory);
+            concreteASTFactory.setElements(elements);
 
             astElementFactory = new ASTElementFactory(processingEnv.getElementUtils(),
                     concreteASTFactory,
@@ -257,6 +260,7 @@ public class ASTEquivalenceTest {
 
         private ElementConverterFactory elementConverterFactory;
         private Provider<ASTElementFactory> astElementFactoryProvider;
+        private Elements elements;
 
         public void setElementConverterFactory(ElementConverterFactory elementConverterFactory){
             this.elementConverterFactory = elementConverterFactory;
@@ -266,6 +270,10 @@ public class ASTEquivalenceTest {
             this.astElementFactoryProvider = astElementFactoryProvider;
         }
 
+        public void setElements(Elements elements) {
+            this.elements = elements;
+        }
+
         @Override
         public ASTElementAnnotation buildASTElementAnnotation(AnnotationMirror annotationMirror, ASTType type) {
             return new ASTElementAnnotation(annotationMirror, type, elementConverterFactory);
@@ -273,7 +281,7 @@ public class ASTEquivalenceTest {
 
         @Override
         public LazyElementParameterBuilder buildParameterBuilder(DeclaredType declaredType) {
-            ASTTypeBuilderVisitor astTypeBuilderVisitor = new ASTTypeBuilderVisitor(astElementFactoryProvider);
+            ASTTypeBuilderVisitor astTypeBuilderVisitor = new ASTTypeBuilderVisitor(astElementFactoryProvider, elements);
             return new LazyElementParameterBuilder(declaredType, astTypeBuilderVisitor);
         }
 

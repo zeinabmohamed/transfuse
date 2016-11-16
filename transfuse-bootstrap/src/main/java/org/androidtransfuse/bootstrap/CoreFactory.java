@@ -96,7 +96,7 @@ public class CoreFactory {
     public ASTElementConverterFactory buildConverterFactory() {
         ConcreteASTFactory astFactory = new ConcreteASTFactory();
         ASTElementFactoryVProxy astElementFactoryProvider = new ASTElementFactoryVProxy();
-        ASTTypeBuilderVisitor astTypeBuilderVisitor = new ASTTypeBuilderVisitor(astElementFactoryProvider);
+        ASTTypeBuilderVisitor astTypeBuilderVisitor = new ASTTypeBuilderVisitor(astElementFactoryProvider, elements);
         ElementConverterFactory elementConverterFactory =
                 new ElementConverterFactory(astTypeBuilderVisitor, astElementFactoryProvider, astFactory);
 
@@ -366,7 +366,7 @@ public class CoreFactory {
 
         @Override
         public LazyElementParameterBuilder buildParameterBuilder(DeclaredType declaredType) {
-            ASTTypeBuilderVisitor astTypeBuilderVisitor = new ASTTypeBuilderVisitor(astElementFactoryProvider);
+            ASTTypeBuilderVisitor astTypeBuilderVisitor = new ASTTypeBuilderVisitor(astElementFactoryProvider, elements);
             return new LazyElementParameterBuilder(declaredType, astTypeBuilderVisitor);
         }
 
